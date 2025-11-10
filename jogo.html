@@ -1,132 +1,221 @@
-// ======== CUPOM DE DESCONTO ========
-function aplicarDesconto(codigo, porcentagem) {
-  localStorage.setItem("cupom", JSON.stringify({ codigo, porcentagem }));
+// ======== CUPOM DE DESCONTO ========<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jogo da Memória - MegaStore</title>
+<style>
+body {
+  background: linear-gradient(135deg, #74ABE2, #5563DE);
+  color: white;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
 }
-function obterCupom() {
-  const cupom = localStorage.getItem("cupom");
-  return cupom ? JSON.parse(cupom) : null;
+h1 { margin-bottom: 10px; }
+#tabuleiro {
+  display: grid;
+  grid-template-columns: repeat(4, 100px);
+  grid-gap: 12px;
+  margin-top: 10px;
 }
-window.aplicarDesconto = aplicarDesconto;
-window.obterCupom = obterCupom;
-
-// ======== EXEMPLO CARRINHO (opcional) ========
-function adicionarAoCarrinho(produto) {
-  const carrinho = JSON.parse(localStorage.getItem("carrinho") || "[]");
-  carrinho.push(produto);
-  localStorage.setItem("carrinho", JSON.stringify(carrinho));
-  alert(${produto.nome} foi adicionado ao carrinho!);
+.carta {
+  width: 100px;
+  height: 100px;
+  background: #ffffff22;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: background 0.3s;
 }
-window.adicionarAoCarrinho = adicionarAoCarrinho;
-
-// =======================
-// CUPOM DE DESCONTO
-// =======================
-
-// Valor fixo do desconto (por exemplo, 10%)
-const DESCONTO = 0.1;
-
-// Nome do cupom válido
-const CUPOM_VALIDO = "MEGADIA10";
-
-// Elementos da página
-const botaoCupom = document.getElementById("aplicar-cupom");
-const campoCupom = document.getElementById("campo-cupom");
-const msgCupom = document.getElementById("mensagem-cupom");
-const totalElem = document.getElementById("total");
-
-// Função para pegar data atual (sem hora)
-function dataHoje() {
-  const hoje = new Date();
-  return hoje.toISOString().split("T")[0]; // Exemplo: "2025-10-26"
+.carta.revelada {
+  background: white;
+  color: #333;
 }
-
-// Função para salvar data do último uso
-function salvarUsoCupom() {
-  localStorage.setItem("cupomUsadoHoje", dataHoje());
+button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font-weight: bold;
 }
-
-// Verifica se já usou o cupom hoje
-function jaUsouCupomHoje() {
-  const ultimoUso = localStorage.getItem("cupomUsadoHoje");
-  return ultimoUso === dataHoje();
+#nivel {
+  margin-bottom: 15px;
+  padding: 5px;
+  font-size: 1rem;
 }
-
-// Função para aplicar o desconto
-function aplicarDesconto() {
-  const totalTexto = totalElem.textContent.replace("Total: R$", "").trim();
-  const total = parseFloat(totalTexto);
-
-  const novoTotal = total - total * DESCONTO;
-  totalElem.textContent = Total: R$ ${novoTotal.toFixed(2)} (com desconto 🎉);
+#telaInicio {
+  text-align: center;
 }
-
-// Clique no botão
-if (botaoCupom) {
-  botaoCupom.addEventListener("click", () => {
-    const codigo = campoCupom.value.trim();
-
-    if (jaUsouCupomHoje()) {
-      msgCupom.textContent = "⚠️ Você já usou um cupom hoje. Tente novamente amanhã.";
-      msgCupom.style.color = "orange";
-      return;
-    }
-
-    if (codigo === CUPOM_VALIDO) {
-      aplicarDesconto();
-      salvarUsoCupom();
-      msgCupom.textContent = "✅ Cupom aplicado com sucesso!";
-      msgCupom.style.color = "green";
-    } else {
-      msgCupom.textContent = "❌ Cupom inválido!";
-      msgCupom.style.color = "red";
-    }
-  });
+#telaJogo {
+  display: none;
+  flex-direction: column;
+  align-items: center;
 }
+#tempo {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+
+<!-- Tela Inicial -->
+<div id="telaInicio">
+  <h1>🧠 Jogo da Memória</h1>
+  <p>Combine os pares o mais rápido possível e ganhe cupons de desconto!</p>
+  <button onclick="iniciarJogo()">🎮 Começar a Jogar</button>
+</div>
+
+<!-- Tela do Jogo -->
+<div id="telaJogo">
+  <h1>🧩 Encontre os Pares!</h1>
+  <label for="nivel">Nível de dificuldade:</label>
+  <select id="nivel" onchange="reiniciar()">
+    <option value="facil">Fácil</option>
+    <option value="medio">Médio</option>
+    <option value="dificil">Difícil</option>
+  </select>
+
+  <div id="tempo">⏱️ Tempo: 0s</div>
+  <div id="tabuleiro"></div>
+  <button onclick="reiniciar()">Reiniciar</button>
+</div>
+
+<!-- Música relaxante -->
+<audio id="musicaFundo" loop>
+  <source src="https://cdn.pixabay.com/download/audio/2022/03/23/audio_bf57c1f0f3.mp3?filename=calm-piano-ambient-110058.mp3" type="audio/mpeg">
+  Seu navegador não suporta áudio.
+</audio>
+
 <script>
-// ======== CUPOM DE DESCONTO DO JOGO ========
+const emojisBase = ["🍎","🍌","🍒","🍉","🍇","🍋","🍓","🥝","🥥","🍑","🍊","🍈"];
+let cartas = [];
+let reveladas = [];
+let paresFeitos = 0;
+let inicioTempo = 0;
+let intervaloTempo;
 
-// Função para aplicar o desconto, se existir
-function aplicarCupom() {
-  const cupomSalvo = JSON.parse(localStorage.getItem("cupomMemoria"));
+function embaralhar(arr) {
+  return arr.sort(() => 0.5 - Math.random());
+}
 
-  if (!cupomSalvo) return; // Nenhum cupom salvo
+function definirCartas() {
+  const nivel = document.getElementById("nivel").value;
+  let quantidade;
 
-  const agora = Date.now();
+  if (nivel === "facil") quantidade = 6;
+  else if (nivel === "medio") quantidade = 8;
+  else quantidade = 10;
 
-  // Verifica validade (24h)
-  if (agora > cupomSalvo.expira) {
-    localStorage.removeItem("cupomMemoria");
-    return;
+  return [...emojisBase.slice(0, quantidade), ...emojisBase.slice(0, quantidade)];
+}
+
+function criarCartas() {
+  const tabuleiro = document.getElementById("tabuleiro");
+  tabuleiro.innerHTML = "";
+  cartas = embaralhar(definirCartas());
+  cartas.forEach((emoji) => {
+    const carta = document.createElement("div");
+    carta.className = "carta";
+    carta.dataset.valor = emoji;
+    carta.addEventListener("click", () => virarCarta(carta));
+    tabuleiro.appendChild(carta);
+  });
+  inicioTempo = Date.now();
+  atualizarTempo();
+}
+
+function virarCarta(carta) {
+  if (reveladas.length < 2 && !carta.classList.contains("revelada")) {
+    carta.classList.add("revelada");
+    carta.textContent = carta.dataset.valor;
+    reveladas.push(carta);
+    if (reveladas.length === 2) verificarPares();
+  }
+}
+
+function verificarPares() {
+  const [c1, c2] = reveladas;
+  if (c1.dataset.valor === c2.dataset.valor) {
+    paresFeitos++;
+    reveladas = [];
+    if (paresFeitos === cartas.length / 2) {
+      clearInterval(intervaloTempo);
+      const tempo = (Date.now() - inicioTempo) / 1000;
+      const nivel = document.getElementById("nivel").value;
+      const desconto = calcularDesconto(nivel, tempo);
+
+      setTimeout(() => {
+        alert(🎉 Parabéns! Você completou em ${tempo.toFixed(1)}s e ganhou um cupom de ${desconto}%! Código: MEMORIA${desconto});
+        window.location.href = "index.html";
+      }, 600);
+    }
+  } else {
+    setTimeout(() => {
+      reveladas.forEach(c => {
+        c.classList.remove("revelada");
+        c.textContent = "";
+      });
+      reveladas = [];
+    }, 800);
+  }
+}
+
+function calcularDesconto(nivel, tempo) {
+  let min, max;
+  let rapido = false;
+
+  if (nivel === "facil") rapido = tempo <= 60;
+  else if (nivel === "medio") rapido = tempo <= 45;
+  else if (nivel === "dificil") rapido = tempo <= 30;
+
+  if (nivel === "facil") {
+    if (rapido) { min = 15; max = 20; } else { min = 5; max = 10; }
+  } else if (nivel === "medio") {
+    if (rapido) { min = 25; max = 35; } else { min = 15; max = 25; }
+  } else if (nivel === "dificil") {
+    if (rapido) { min = 40; max = 50; } else { min = 25; max = 35; }
   }
 
-  // Seleciona elementos do carrinho
-  const totalEl = document.getElementById("total");
-  const lista = document.getElementById("lista-carrinho");
-
-  // Pega o valor total (exemplo: "Total: R$ 199,00")
-  const texto = totalEl.textContent || "";
-  const numero = parseFloat(texto.replace(/[^\d,]/g, "").replace(",", "."));
-
-  if (isNaN(numero)) return;
-
-  const desconto = cupomSalvo.valor;
-  const novoTotal = numero - (numero * desconto / 100);
-
-  // Mostra cupom e total atualizado
-  const infoCupom = document.createElement("p");
-  infoCupom.innerHTML = `
-    🎉 Cupom aplicado: <strong>${cupomSalvo.codigo}</strong> (${desconto}% off)<br>
-    Novo total: <strong>R$ ${novoTotal.toFixed(2).replace(".", ",")}</strong>
-  `; {
-  infoCupom.style.color = "#008000";
-  infoCupom.style.fontWeight = "bold";
-  infoCupom.style.marginTop = "10px";
-
-  lista.insertAdjacentElement("afterend", infoCupom);
-  totalEl.textContent = Total: R$ ${novoTotal.toFixed(2).replace(".", ",")};
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-// Executa quando a página carrega
-window.addEventListener("DOMContentLoaded", aplicarCupom);
-</script>
+function reiniciar() {
+  clearInterval(intervaloTempo);
+  paresFeitos = 0;
+  reveladas = [];
+  criarCartas();
+}
 
+function atualizarTempo() {
+  const tempoDiv = document.getElementById("tempo");
+  intervaloTempo = setInterval(() => {
+    const tempo = ((Date.now() - inicioTempo) / 1000).toFixed(1);
+    tempoDiv.textContent = ⏱️ Tempo: ${tempo}s;
+  }, 100);
+}
+
+function iniciarJogo() {
+  document.getElementById("telaInicio").style.display = "none";
+  document.getElementById("telaJogo").style.display = "flex";
+  criarCartas();
+
+  // música relaxante
+  const musica = document.getElementById("musicaFundo");
+  musica.volume = 0.3;
+  musica.play().catch(err => console.log("Reprodução bloqueada:", err));
+}
+</script>
+</body>
+</html>
