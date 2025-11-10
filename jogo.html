@@ -20,6 +20,7 @@ h1 { margin-bottom: 10px; }
   display: grid;
   grid-template-columns: repeat(4, 100px);
   grid-gap: 12px;
+  margin-top: 10px;
 }
 .carta {
   width: 100px;
@@ -52,21 +53,50 @@ button {
   padding: 5px;
   font-size: 1rem;
 }
+#telaInicio {
+  text-align: center;
+}
+#telaJogo {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+}
+#tempo {
+  margin-top: 10px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
 </style>
 </head>
 <body>
-<h1>🧠 Jogo da Memória</h1>
-<p>Combine os pares e ganhe um cupom!</p>
 
-<label for="nivel">Nível de dificuldade:</label>
-<select id="nivel" onchange="reiniciar()">
-  <option value="facil">Fácil</option>
-  <option value="medio">Médio</option>
-  <option value="dificil">Difícil</option>
-</select>
+<!-- Tela Inicial -->
+<div id="telaInicio">
+  <h1>🧠 Jogo da Memória</h1>
+  <p>Combine os pares o mais rápido possível e ganhe cupons de desconto!</p>
+  <button onclick="iniciarJogo()">🎮 Começar a Jogar</button>
+</div>
 
-<div id="tabuleiro"></div>
-<button onclick="reiniciar()">Reiniciar</button>
+<!-- Tela do Jogo -->
+<div id="telaJogo">
+  <h1>🧩 Encontre os Pares!</h1>
+  <label for="nivel">Nível de dificuldade:</label>
+  <select id="nivel" onchange="reiniciar()">
+    <option value="facil">Fácil</option>
+    <option value="medio">Médio</option>
+    <option value="dificil">Difícil</option>
+  </select>
+
+  <div id="tempo">⏱️ Tempo: 0s</div>
+  <div id="tabuleiro"></div>
+  <button onclick="reiniciar()">Reiniciar</button>
+</div>
+
+<!-- Música relaxante -->
+<audio id="musicaFundo" loop>
+  <source src="https://cdn.pixabay.com/download/audio/2022/03/23/audio_bf57c1f0f3.mp3?filename=calm-piano-ambient-110058.mp3" type="audio/mpeg">
+  Seu navegador não suporta áudio.
+</audio>
 
 <script>
 const emojisBase = ["🍎","🍌","🍒","🍉","🍇","🍋","🍓","🥝","🥥","🍑","🍊","🍈"];
@@ -74,6 +104,7 @@ let cartas = [];
 let reveladas = [];
 let paresFeitos = 0;
 let inicioTempo = 0;
+let intervaloTempo;
 
 function embaralhar(arr) {
   return arr.sort(() => 0.5 - Math.random());
@@ -102,6 +133,7 @@ function criarCartas() {
     tabuleiro.appendChild(carta);
   });
   inicioTempo = Date.now();
+  atualizarTempo();
 }
 
 function virarCarta(carta) {
@@ -119,12 +151,13 @@ function verificarPares() {
     paresFeitos++;
     reveladas = [];
     if (paresFeitos === cartas.length / 2) {
+      clearInterval(intervaloTempo);
       const tempo = (Date.now() - inicioTempo) / 1000;
       const nivel = document.getElementById("nivel").value;
       const desconto = calcularDesconto(nivel, tempo);
 
       setTimeout(() => {
-        alert(🎉 Parabéns! Você ganhou um cupom de ${desconto}% de desconto! Código: MEMORIA${desconto});
+        alert(🎉 Parabéns! Você completou em ${tempo.toFixed(1)}s e ganhou um cupom de ${desconto}%! Código: MEMORIA${desconto});
         window.location.href = "index.html";
       }, 600);
     }
@@ -143,29 +176,46 @@ function calcularDesconto(nivel, tempo) {
   let min, max;
   let rapido = false;
 
-  // Define tempo-limite para considerar "rápido"
-  if (nivel === "facil") rapido = tempo < 30;
-  else if (nivel === "medio") rapido = tempo < 45;
-  else if (nivel === "dificil") rapido = tempo < 60;
+  if (nivel === "facil") rapido = tempo <= 60;
+  else if (nivel === "medio") rapido = tempo <= 45;
+  else if (nivel === "dificil") rapido = tempo <= 30;
 
   if (nivel === "facil") {
-    if (rapido) { min = 10; max = 20; } else { min = 5; max = 10; }
+    if (rapido) { min = 15; max = 20; } else { min = 5; max = 10; }
   } else if (nivel === "medio") {
-    if (rapido) { min = 30; max = 40; } else { min = 20; max = 30; }
+    if (rapido) { min = 25; max = 35; } else { min = 15; max = 25; }
   } else if (nivel === "dificil") {
-    if (rapido) { min = 40; max = 50; } else { min = 30; max = 40; }
+    if (rapido) { min = 40; max = 50; } else { min = 25; max = 35; }
   }
 
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
 function reiniciar() {
+  clearInterval(intervaloTempo);
   paresFeitos = 0;
   reveladas = [];
   criarCartas();
 }
 
-criarCartas();
+function atualizarTempo() {
+  const tempoDiv = document.getElementById("tempo");
+  intervaloTempo = setInterval(() => {
+    const tempo = ((Date.now() - inicioTempo) / 1000).toFixed(1);
+    tempoDiv.textContent = ⏱️ Tempo: ${tempo}s;
+  }, 100);
+}
+
+function iniciarJogo() {
+  document.getElementById("telaInicio").style.display = "none";
+  document.getElementById("telaJogo").style.display = "flex";
+  criarCartas();
+
+  // música relaxante
+  const musica = document.getElementById("musicaFundo");
+  musica.volume = 0.3;
+  musica.play().catch(err => console.log("Reprodução bloqueada:", err));
+}
 </script>
 </body>
 </html>
