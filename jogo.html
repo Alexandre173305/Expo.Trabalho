@@ -94,7 +94,7 @@ button {
   <div id="tabuleiro"></div>
   <button onclick="reiniciar()">Reiniciar</button>
   <!-- Novo botão de iniciar -->
-  <button id="botaoIniciar" onclick="iniciarJogo()">Iniciar Jogo</button>
+  <button id="botaoIniciar" onclick="reiniciarJogo()">Iniciar Jogo</button>
 </div>
 
 <!-- Música relaxante -->
@@ -222,6 +222,14 @@ function iniciarJogo() {
   musica.volume = 0.3;
   musica.play().catch(err => console.log("Reprodução bloqueada:", err));
 }
-</script>
-</body>
-</html>
+
+// Função para reiniciar o jogo completamente ao pressionar o botão "Iniciar Jogo"
+function reiniciarJogo() {
+  paresFeitos = 0;
+  reveladas = [];
+  criarCartas();
+  document.getElementById("botaoIniciar").style.display = "none"; // Ocultar o botão de iniciar após o reinício
+  document.getElementById("telaInicio").style.display = "none"; // Certifique-se de que a tela de início não apareça
+  document.getElementBy
+
+
