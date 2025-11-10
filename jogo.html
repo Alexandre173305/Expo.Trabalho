@@ -1,259 +1,120 @@
-<!-- SEÇÃO ISOLADA DO JOGO -->
-<section id="jogoMemoria">
-  <style>
-  /* ========= ESCOPADO PARA O JOGO ========== */
-  #jogoMemoria {
-    color: var(--texto, #fff);
-    font-family: sans-serif;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-    min-height: 100vh;
-    transition: background 0.5s, color 0.5s;
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Jogo da Memória - MegaStore</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body {
+  background: linear-gradient(135deg, #74ABE2, #5563DE);
+  color: white;
+  font-family: sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+h1 { margin-bottom: 10px; }
+#tabuleiro {
+  display: grid;
+  grid-template-columns: repeat(4, 100px);
+  grid-gap: 12px;
+}
+.carta {
+  width: 100px;
+  height: 100px;
+  background: #ffffff22;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+.carta.revelada {
+  background: white;
+  color: #333;
+}
+button {
+  margin-top: 20px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 10px;
+  background: #fff;
+  color: #333;
+  cursor: pointer;
+  font-weight: bold;
+}
+</style>
+</head>
+<body>
+<h1>🧠 Jogo da Memória</h1>
+<p>Combine os pares e ganhe um cupom!</p>
+<div id="tabuleiro"></div>
+<button onclick="reiniciar()">Reiniciar</button>
+
+<script src="script.js"></script>
+<script>
+const emojis = ["🍎","🍌","🍒","🍉","🍇","🍋","🍓","🥝"];
+let cartas = [...emojis, ...emojis];
+let reveladas = [];
+let paresFeitos = 0;
+
+function embaralhar(arr) {
+  return arr.sort(() => 0.5 - Math.random());
+}
+function criarCartas() {
+  const tabuleiro = document.getElementById("tabuleiro");
+  tabuleiro.innerHTML = "";
+  cartas = embaralhar(cartas);
+  cartas.forEach((emoji) => {
+    const carta = document.createElement("div");
+    carta.className = "carta";
+    carta.dataset.valor = emoji;
+    carta.addEventListener("click", () => virarCarta(carta));
+    tabuleiro.appendChild(carta);
+  });
+}
+function virarCarta(carta) {
+  if (reveladas.length < 2 && !carta.classList.contains("revelada")) {
+    carta.classList.add("revelada");
+    carta.textContent = carta.dataset.valor;
+    reveladas.push(carta);
+    if (reveladas.length === 2) verificarPares();
   }
-
-  /* Fundo padrão claro/escuro (usando variáveis do site) */
-  #jogoMemoria[data-tema="claro"] {
-    background: linear-gradient(135deg, #e2e8f0, #cbd5e1);
-    color: #222;
-  }
-
-  #jogoMemoria[data-tema="escuro"] {
-    background: linear-gradient(135deg, #1e293b, #334155);
-    color: #fff;
-  }
-
-  #jogoMemoria h1 { margin-bottom: 10px; }
-
-  #jogoMemoria #tabuleiro {
-    display: grid;
-    grid-template-columns: repeat(4, 100px);
-    grid-gap: 12px;
-    margin-top: 10px;
-  }
-
-  #jogoMemoria .carta {
-    width: 100px;
-    height: 100px;
-    background: #ffffff22;
-    border-radius: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    cursor: pointer;
-    transition: background 0.3s;
-  }
-
-  #jogoMemoria .carta.revelada {
-    background: white;
-    color: #333;
-  }
-
-  #jogoMemoria button {
-    margin-top: 10px;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 10px;
-    background: #fff;
-    color: #333;
-    cursor: pointer;
-    font-weight: bold;
-  }
-
-  #jogoMemoria #nivel {
-    margin-bottom: 15px;
-    padding: 5px;
-    font-size: 1rem;
-  }
-
-  #jogoMemoria #telaInicio {
-    text-align: center;
-  }
-
-  #jogoMemoria #telaJogo {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  #jogoMemoria #tempo {
-    margin-top: 10px;
-    font-size: 1.2rem;
-    font-weight: bold;
-  }
-
-  #jogoMemoria #botaoIniciar {
-    display: none;
-  }
-  </style>
-
-  <!-- TELA INICIAL -->
-  <div id="telaInicio">
-    <h1>🧠 Jogo da Memória</h1>
-    <p>Combine os pares o mais rápido possível e ganhe cupons de desconto!</p>
-    <button onclick="iniciarJogo()">🎮 Começar a Jogar</button>
-  </div>
-
-  <!-- TELA DO JOGO -->
-  <div id="telaJogo">
-    <h1>🧩 Encontre os Pares!</h1>
-    <label for="nivel">Nível de dificuldade:</label>
-    <select id="nivel" onchange="reiniciar()">
-      <option value="facil">Fácil</option>
-      <option value="medio">Médio</option>
-      <option value="dificil">Difícil</option>
-    </select>
-
-    <div id="tempo">⏱️ Tempo: 0s</div>
-    <div id="tabuleiro"></div>
-    <button onclick="reiniciar()">Reiniciar</button>
-    <button id="botaoIniciar" onclick="reiniciarJogo()">Iniciar Novamente</button>
-  </div>
-
-  <audio id="musicaFundo" loop>
-    <source src="https://cdn.pixabay.com/download/audio/2022/03/23/audio_bf57c1f0f3.mp3?filename=calm-piano-ambient-110058.mp3" type="audio/mpeg">
-  </audio>
-
-  <script>
-  // ========== LÓGICA DO JOGO ==========
-  const emojisBase = ["🍎","🍌","🍒","🍉","🍇","🍋","🍓","🥝","🥥","🍑","🍊","🍈"];
-  let cartas = [];
-  let reveladas = [];
-  let paresFeitos = 0;
-  let inicioTempo = 0;
-  let intervaloTempo;
-
-  // Funções do jogo
-  function embaralhar(arr) {
-    return arr.sort(() => 0.5 - Math.random());
-  }
-
-  function definirCartas() {
-    const nivel = document.getElementById("nivel").value;
-    let quantidade;
-    if (nivel === "facil") quantidade = 6;
-    else if (nivel === "medio") quantidade = 8;
-    else quantidade = 10;
-    return [...emojisBase.slice(0, quantidade), ...emojisBase.slice(0, quantidade)];
-  }
-
-  function criarCartas() {
-    const tabuleiro = document.getElementById("tabuleiro");
-    tabuleiro.innerHTML = "";
-    cartas = embaralhar(definirCartas());
-    cartas.forEach((emoji) => {
-      const carta = document.createElement("div");
-      carta.className = "carta";
-      carta.dataset.valor = emoji;
-      carta.addEventListener("click", () => virarCarta(carta));
-      tabuleiro.appendChild(carta);
-    });
-    inicioTempo = Date.now();
-    atualizarTempo();
-  }
-
-  function virarCarta(carta) {
-    if (reveladas.length < 2 && !carta.classList.contains("revelada")) {
-      carta.classList.add("revelada");
-      carta.textContent = carta.dataset.valor;
-      reveladas.push(carta);
-      if (reveladas.length === 2) verificarPares();
-    }
-  }
-
-  function verificarPares() {
-    const [c1, c2] = reveladas;
-    if (c1.dataset.valor === c2.dataset.valor) {
-      paresFeitos++;
-      reveladas = [];
-      if (paresFeitos === cartas.length / 2) {
-        clearInterval(intervaloTempo);
-        const tempo = (Date.now() - inicioTempo) / 1000;
-        const nivel = document.getElementById("nivel").value;
-        const desconto = calcularDesconto(nivel, tempo);
-
-        setTimeout(() => {
-          alert(`🎉 Parabéns! Você completou em ${tempo.toFixed(1)}s e ganhou um cupom de ${desconto}%! Código: MEMORIA${desconto}`);
-          document.getElementById("botaoIniciar").style.display = "block";
-        }, 600);
-      }
-    } else {
+}
+function verificarPares() {
+  const [c1, c2] = reveladas;
+  if (c1.dataset.valor === c2.dataset.valor) {
+    paresFeitos++;
+    reveladas = [];
+    if (paresFeitos === emojis.length) {
       setTimeout(() => {
-        reveladas.forEach(c => {
-          c.classList.remove("revelada");
-          c.textContent = "";
-        });
-        reveladas = [];
-      }, 800);
+        alert("🎉 Parabéns! Você ganhou um cupom de 15% de desconto!");
+        aplicarDesconto("MEMORIA15", 15);
+        window.location.href = "index.html";
+      }, 600);
     }
+  } else {
+    setTimeout(() => {
+      reveladas.forEach(c => {
+        c.classList.remove("revelada");
+        c.textContent = "";
+      });
+      reveladas = [];
+    }, 800);
   }
-
-  function calcularDesconto(nivel, tempo) {
-    let min, max;
-    let rapido = false;
-    if (nivel === "facil") rapido = tempo <= 60;
-    else if (nivel === "medio") rapido = tempo <= 45;
-    else if (nivel === "dificil") rapido = tempo <= 30;
-    if (nivel === "facil") {
-      if (rapido) { min = 15; max = 20; } else { min = 5; max = 10; }
-    } else if (nivel === "medio") {
-      if (rapido) { min = 25; max = 35; } else { min = 15; max = 25; }
-    } else if (nivel === "dificil") {
-      if (rapido) { min = 40; max = 50; } else { min = 25; max = 35; }
-    }
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
-
-  function reiniciar() {
-    clearInterval(intervaloTempo);
-    paresFeitos = 0;
-    reveladas = [];
-    criarCartas();
-    document.getElementById("botaoIniciar").style.display = "none";
-  }
-
-  function atualizarTempo() {
-    const tempoDiv = document.getElementById("tempo");
-    intervaloTempo = setInterval(() => {
-      const tempo = ((Date.now() - inicioTempo) / 1000).toFixed(1);
-      tempoDiv.textContent = `⏱️ Tempo: ${tempo}s`;
-    }, 100);
-  }
-
-  function iniciarJogo() {
-    document.getElementById("telaInicio").style.display = "none";
-    document.getElementById("telaJogo").style.display = "flex";
-    criarCartas();
-
-    const musica = document.getElementById("musicaFundo");
-    musica.volume = 0.3;
-    musica.play().catch(() => {});
-  }
-
-  function reiniciarJogo() {
-    paresFeitos = 0;
-    reveladas = [];
-    criarCartas();
-    document.getElementById("botaoIniciar").style.display = "none";
-  }
-
-  // ========== SUPORTE AO MODO CLARO/ESCURO ==========
-  // Detecta o tema atual do site e aplica ao jogo
-  function aplicarTemaJogo() {
-    const temaSite = document.documentElement.getAttribute("data-theme") || "claro";
-    document.getElementById("jogoMemoria").setAttribute("data-tema", temaSite);
-  }
-
-  aplicarTemaJogo();
-  // Caso o site troque de tema dinamicamente
-  const observer = new MutationObserver(aplicarTemaJogo);
-  observer.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  </script>
-</section>
-
-
-
+}
+function reiniciar() {
+  paresFeitos = 0;
+  reveladas = [];
+  criarCartas();
+}
+criarCartas();
+</script>
+</body>
+</html>
 
