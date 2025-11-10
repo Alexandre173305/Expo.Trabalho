@@ -66,6 +66,9 @@ button {
   font-size: 1.2rem;
   font-weight: bold;
 }
+#botaoIniciar {
+  display: none;
+}
 </style>
 </head>
 <body>
@@ -90,6 +93,8 @@ button {
   <div id="tempo">⏱️ Tempo: 0s</div>
   <div id="tabuleiro"></div>
   <button onclick="reiniciar()">Reiniciar</button>
+  <!-- Novo botão de iniciar -->
+  <button id="botaoIniciar" onclick="iniciarJogo()">Iniciar Jogo</button>
 </div>
 
 <!-- Música relaxante -->
@@ -157,8 +162,8 @@ function verificarPares() {
       const desconto = calcularDesconto(nivel, tempo);
 
       setTimeout(() => {
-        alert(🎉 Parabéns! Você completou em ${tempo.toFixed(1)}s e ganhou um cupom de ${desconto}%! Código: MEMORIA${desconto});
-        window.location.href = "index.html";
+        alert(`🎉 Parabéns! Você completou em ${tempo.toFixed(1)}s e ganhou um cupom de ${desconto}%! Código: MEMORIA${desconto}`);
+        document.getElementById("botaoIniciar").style.display = "block"; // Mostrar botão de iniciar
       }, 600);
     }
   } else {
@@ -196,13 +201,14 @@ function reiniciar() {
   paresFeitos = 0;
   reveladas = [];
   criarCartas();
+  document.getElementById("botaoIniciar").style.display = "none"; // Esconde o botão de iniciar enquanto o jogo está rolando
 }
 
 function atualizarTempo() {
   const tempoDiv = document.getElementById("tempo");
   intervaloTempo = setInterval(() => {
     const tempo = ((Date.now() - inicioTempo) / 1000).toFixed(1);
-    tempoDiv.textContent = ⏱️ Tempo: ${tempo}s;
+    tempoDiv.textContent = `⏱️ Tempo: ${tempo}s`;
   }, 100);
 }
 
@@ -211,7 +217,7 @@ function iniciarJogo() {
   document.getElementById("telaJogo").style.display = "flex";
   criarCartas();
 
-  // música relaxante
+  // Música relaxante
   const musica = document.getElementById("musicaFundo");
   musica.volume = 0.3;
   musica.play().catch(err => console.log("Reprodução bloqueada:", err));
